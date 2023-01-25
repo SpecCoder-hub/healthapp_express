@@ -139,23 +139,24 @@ router.get("/get_ecg", async function (req, res, next) {
   const leadNumber = 2;
   const totalCount = (stat.size - headerSize) / (3 * leadNumber);
   const position = Math.floor((totalCount * value) / 100_000);
-  const resCount = 2000;
+  const resCount = 20000;
 
   fs.open(path, "r+", function (err, f) {
     if (err) throw err;
 
-    const buffer = Buffer.alloc(52_000);
+    const buffer = Buffer.alloc(resCount * leadNumber * 3);
     fs.read(
       f,
       buffer,
       0,
-      50_000,
+      resCount * leadNumber * 3,
       position * 3 * leadNumber + headerSize,
       function (err, bytesRead, buffer) {
+console.log(resCount*3*leadNumber, bytesRead)
         const lead1 = [],
           lead2 = [];
         for (let i = 0; i < resCount; i++) {
-          if ((i + 1) * 3 * leadNumber < bytesRead) {
+          if ((i + 1) * 3 * leadNumber <= bytesRead) {
             let v1 = buffer.readUint8(i * 3 * leadNumber);
             let v2 = buffer.readUint8(i * 3 * leadNumber + 1);
             let v3 = buffer.readUint8(i * 3 * leadNumber + 2);
@@ -171,7 +172,7 @@ router.get("/get_ecg", async function (req, res, next) {
             lead2.push(value);
           }
         }
-
+        console.log(lead1.length)
         // function compareNumbers(a, b) {
         //   return a - b;
         // }
@@ -181,7 +182,7 @@ router.get("/get_ecg", async function (req, res, next) {
         // console.log(min, max);
 
         // const fit = scaler.fit_transform(data, -1, 1);
-        res.status(200).json({lead1, lead2});
+        res.status(200).json({ lead1, lead2 });
       }
     );
   });
